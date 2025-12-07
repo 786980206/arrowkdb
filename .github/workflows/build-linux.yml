@@ -1,0 +1,110 @@
+name: Build ArrowKDB on Ubuntu 24.04
+
+# 触发条件：手动触发 + push 到仓库
+on:
+  workflow_dispatch:   # 支持手动触发
+  push:                # 支持 push 时触发
+
+jobs:
+  build-ubuntu24:
+    name: Build C++ on Ubuntu 24.04
+    runs-on: ubuntu-24.04
+
+    steps:
+    # 1️⃣ Checkout 代码
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # 2️⃣ 安装必要依赖
+    - name: Install Dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential cmake ninja-build wget tar
+
+    # 3️⃣ 恢复 Arrow 缓存（如果之前构建过 Arrow）
+    - name: Restore Arrow Cache
+      id: arrow-get
+      uses: actions/cache/restore@v4
+      with:
+        path: /home/runner/work/arrowkdb/arrowkdb/arrow-apache-arrow-9.0.0
+        key: arrow-build-9.0.0-${{ runner.os }}-ORCON
+
+    # 4️⃣ 构建 Arrow C++ 库（如果缓存不存在）
+    - name: Build Arrow
+      run: |
+        ARROW_DIR=/home/runner/work/arrowkdb/arrowkdb/arrow-apache-arrow-9.0.0
+        BUILD_DIR=$ARROW_DIR/cpp/build
+        INSTALL_DIR=$ARROW_DIR/cpp/install
+
+        if [ ! -f "$BUILD_DIR/release/libarrow.so" ]; then
+          # 下载并解压 Arrow 源码
+          wget https://github.com/apache/arrow/archive/refs/tags/apache-arrow-9.0.0.tar.gz -q
+          tar -xzf apache-arrow-9.0.0.tar.gz -C /home/runner/work/arrowkdb/arrowkdb
+
+          # 创建 build 和 install 目录
+          mkdir -p $BUILD_DIR $INSTALL_DIR
+          cd $BUILD_DIR
+
+          # 设置安装路径
+          export ARROW_INSTALL=$INSTALL_DIR
+
+          # 配置构建
+          cmake .. \
+            -DARROW_PARQUET=ON \
+            -DARROW_WITH_SNAPPY=ON \
+            -DARROW_WITH_ZLIB=ON \
+            -DARROW_WITH_ZSTD=ON \
+            -DARROW_WITH_BROTLI=ON \
+            -DARROW_BUILD_STATIC=OFF \
+            -DARROW_COMPUTE=OFF \
+            -DARROW_DEPENDENCY_USE_SHARED=OFF \
+            -DARROW_ORC=ON \
+            -DCMAKE_INSTALL_PREFIX=$ARROW_INSTALL
+
+          # 构建并安装
+          cmake --build . --config Release
+          cmake --build . --config Release --target install
+        else
+          echo "Arrow already built, using cached build."
+        fi
+
+    # 5️⃣ 保存 Arrow 缓存（仅当缓存未命中时）
+    - name: Save Arrow Cache
+      id: arrow-set
+      if: always() && steps.arrow-get.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.arrow-get.outputs.cache-primary-key }}
+        path: /home/runner/work/arrowkdb/arrowkdb/arrow-apache-arrow-9.0.0
+
+    # 6️⃣ 编译 arrowkdb
+    - name: Build ArrowKDB
+      run: |
+        export ARROW_INSTALL=/home/runner/work/arrowkdb/arrowkdb/arrow-apache-arrow-9.0.0/cpp/install
+        mkdir -p qhome build release
+        export QHOME=qhome
+        cd build
+
+        # 拷贝 Arrow 源码到 build 目录
+        cp -r /home/runner/work/arrowkdb/arrowkdb/arrow-apache-arrow-9.0.0/cpp/src/arrow arrow
+
+        # 配置 arrowkdb 构建，添加 rpath 指向当前目录的共享库
+        cmake .. \
+          -DARROW_INSTALL=$ARROW_INSTALL \
+          -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,'\$ORIGIN'" \
+          -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,'\$ORIGIN'"
+
+        # 构建 arrowkdb
+        cmake --build . --config Release
+
+        # 汇总产物到 module 目录
+        cp arrowkdb/lib/arrowkdb.so ../module/
+        cp $ARROW_INSTALL/lib/libarrow.so.900 ../module/
+        cp $ARROW_INSTALL/lib/libparquet.so.900 ../module/
+
+    # 7️⃣ 上传产物
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: arrowkdb
+        path: /home/runner/work/arrowkdb/arrowkdb/module/
