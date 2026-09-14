@@ -294,7 +294,7 @@ K readParquetSchema(K parquet_file)
       arrow::default_memory_pool()));
 
   std::unique_ptr<parquet::arrow::FileReader> reader;
-  #if ARROW_VERSION_MAJOR >= 22
+  #if ARROW_VERSION_MAJOR >= 21
   PARQUET_ASSIGN_OR_THROW(reader, parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
   #else
   PARQUET_THROW_NOT_OK(parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -332,7 +332,7 @@ K readParquetNumRowGroups(K parquet_file)
       arrow::default_memory_pool()));
 
   std::unique_ptr<parquet::arrow::FileReader> reader;
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 21
   PARQUET_ASSIGN_OR_THROW(reader, parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
 #else
   PARQUET_THROW_NOT_OK(parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -378,7 +378,7 @@ K readParquetData(K parquet_file, K options)
   }
 
   std::unique_ptr<parquet::arrow::FileReader> reader;
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 21
   PARQUET_ASSIGN_OR_THROW(reader, parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
 #else
   PARQUET_THROW_NOT_OK(parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -438,7 +438,7 @@ K readParquetColumn(K parquet_file, K column_index, K options)
       arrow::default_memory_pool()));
 
   std::unique_ptr<parquet::arrow::FileReader> reader;
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 21
   PARQUET_ASSIGN_OR_THROW(reader, parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
 #else
   PARQUET_THROW_NOT_OK(parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -505,7 +505,7 @@ K readParquetRowGroups(K parquet_file, K row_groups, K columns, K options)
   }
 
   std::unique_ptr<parquet::arrow::FileReader> reader;
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 21
   PARQUET_ASSIGN_OR_THROW(reader, parquet::arrow::OpenFile(infile, arrow::default_memory_pool()));
 #else
   PARQUET_THROW_NOT_OK(parquet::arrow::OpenFile(infile, arrow::default_memory_pool(), &reader));
@@ -833,7 +833,7 @@ K parseArrowSchema(K char_array)
   if (char_array->t != KG && char_array->t != KC)
     return krr((S)"char_array not 4|10h");
 
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 20
   auto buffer = std::make_shared<arrow::Buffer>(kG(char_array), char_array->n);
   auto buf_reader = std::make_shared<arrow::io::BufferReader>(buffer);
 #else
@@ -870,7 +870,7 @@ K parseArrowData(K char_array, K options)
   // Type mapping overrides
   kx::arrowkdb::TypeMappingOverride type_overrides{ read_options };
 
-#if ARROW_VERSION_MAJOR >= 22
+#if ARROW_VERSION_MAJOR >= 20
   auto buffer = std::make_shared<arrow::Buffer>(kG(char_array), char_array->n);
   auto buf_reader = std::make_shared<arrow::io::BufferReader>(buffer);
 #else

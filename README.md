@@ -43,6 +43,11 @@ Conversely, Arrow is an in-memory format meant for direct and efficient use for 
 
 ### Requirements
 
+If you are installing as a module using qmamba:
+- kdb-x (Linux/MacOS/Windows)
+- [qmamba](https://github.com/KxSystems/qmamba)
+
+If you are building from source or install from a release:
 - kdb+ ≥ 3.5 64-bit (Linux/MacOS/Windows)
 - Apache Arrow ≥ 9.0.0 (or ≥ 6.0.0 if building `arrowkdb` from source)
 - C++14 or later
@@ -50,6 +55,17 @@ Conversely, Arrow is an in-memory format meant for direct and efficient use for 
 
 > :warning: If using the packaged version of `arrowkdb` you should install version 9.0.0 of Apache Arrow
 
+### Install module with qmamba
+
+qmamba is a package manager for kdb-x. It is currently available in a private preview capacity. You are welcome to try it and provide feedback.
+Follow the install instructions for [qmamba](https://github.com/KxSystems/qmamba/blob/main/README.md#installation).
+
+```q
+qmamba:use`kx.qmamba
+qmamba.create "myenv"
+qmamba.activate "myenv"
+qmamba.install `SPECS`CHANNEL!(enlist "q-kx-arrow";("kx";"conda-forge"))
+```
 
 ### Third-party library installation
 
@@ -114,9 +130,9 @@ Copy the Arrow, Parquet and compression DLLs to the `%QHOME%\w64` directory:
 C:\Git\arrow\cpp\build> copy release\Release\*.dll %QHOME%\w64
 ```
 
-## Installing a Release
+### Installing a Release
 
-It is recommended that a user install this module through a release. 
+If not using qmamba, it is recommended that a user install this module through a release.
 
 1. Ensure you have downloaded/installed the Arrow C++ API following the [instructions](#third-party-library-installation).
 1. [Download a release](https://github.com/KxSystems/arrowkdb/releases) and then unzip to your module directory. The following example assumes the default install location for KDB-X.

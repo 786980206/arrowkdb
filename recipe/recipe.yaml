@@ -1,5 +1,5 @@
 context:
-  version: "2.0.0"
+  version: "2.0.1"
 
 package:
   name: q-kx-arrow
@@ -13,6 +13,7 @@ source:
 
 build:
   number: 0
+  string: arrow${{ libarrow | replace(".", "_") }}_h${{ hash }}_${{ build_number }}
 
 requirements:
   build:
@@ -20,9 +21,6 @@ requirements:
     - cmake
     - make
   host:
-    - libarrow
-    - libparquet
-  run:
     - libarrow
     - libparquet
 
